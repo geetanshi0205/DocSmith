@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}DocSmith{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="card text-center mb-3">
+    <div class="card-header">
+        <h1 class="card-title">🚀 DocSmith</h1>
+        <p class="card-description">Transform your code into beautiful documentation with AI</p>
+    </div>
+</div>
+
+{% if not api_configured %}
+<div class="alert alert-warning mb-3">
+    <span class="alert-content">⚠️ API Key not configured. Please set ANTHROPIC_API_KEY environment variable.</span>
+</div>
+{% endif %}
+
+<!-- Mode Selection -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📚 Documentation Generator</h2>
+                <p class="card-description">Upload your entire codebase and generate comprehensive documentation including architecture overviews, developer guides, and API docs.</p>
+            </div>
+            <a href="{{ url_for('documentation_generator') }}" class="btn btn-block">Get Started</a>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🔍 Code Explanation</h2>
+                <p class="card-description">Paste any code snippet and get detailed explanations about what it does, how it works, and best practices.</p>
+            </div>
+            <a href="{{ url_for('code_explanation') }}" class="btn btn-secondary btn-block">Try It Out</a>
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h2 class="card-title">✨ Features</h2>
+    </div>
+    
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-title">GitHub Integration</div>
+            <p class="text-muted">Clone and analyze public repositories</p>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">Multiple Formats</div>
+            <p class="text-muted">ZIP files, individual files, local paths</p>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">AI-Powered</div>
+            <p class="text-muted">Intelligent analysis with Claude AI</p>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">Export Options</div>
+            <p class="text-muted">Download as Markdown or ZIP</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
