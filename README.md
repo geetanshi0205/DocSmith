@@ -86,7 +86,7 @@ The tool automatically detects and handles:
 ```
 codedocs/
 ├── flask_app.py           # Main Flask application
-├── run_flask.py          # Application runner
+├── server.py          # Application runner
 ├── claude_integration.py  # Claude AI integration
 ├── code_analyzer.py      # Codebase analysis functionality
 ├── doc_generator.py      # Documentation generation logic
