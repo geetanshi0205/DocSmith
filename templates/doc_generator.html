@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Upload Codebase</h2>
+                <p class="card-description">Choose your upload method</p>
+            </div>
+            
+            <div class="form-group">
+                <div class="radio-group">
+                    <div class="radio-item selected">
+                        <input type="radio" name="upload_method" value="github" checked>
+                        <div>
+                            <h3>🐙 GitHub Repository</h3>
+                            <p>Clone from a public repository</p>
+                        </div>
+                    </div>
+                    
+                    <div class="radio-item">
+                        <input type="radio" name="upload_method" value="zip">
+                        <div>
+                            <h3>📦 ZIP Archive</h3>
+                            <p>Upload a ZIP file</p>
+                        </div>
+                    </div>
+                    
+                    <div class="radio-item">
+                        <input type="radio" name="upload_method" value="files">
+                        <div>
+                            <h3>📄 Individual Files</h3>
+                            <p>Select multiple files</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="github-upload" class="upload-form">
+                <form id="github-form" action="{{ url_for('upload_github') }}" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Repository URL</label>
+                        <input type="url" name="github_url" class="form-input" 
+                               placeholder="https://github.com/owner/repo" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-block">Clone Repository</button>
+                </form>
+            </div>
+            
+            <div id="zip-upload" class="upload-form hidden">
+                <form id="zip-form" action="{{ url_for('upload_zip') }}" method="POST" enctype="multipart/form-data">
+                    <div class="file-upload">
+                        <input type="file" name="zip_file" accept=".zip" style="display: none;">
+                        <p>📦 Drop ZIP file here or click to browse</p>
+                    </div>
+                </form>
+            </div>
+            
+            <div id="files-upload" class="upload-form hidden">
+                <form id="files-form" action="{{ url_for('upload_files') }}" method="POST" enctype="multipart/form-data">
+                    <div class="file-upload">
+                        <input type="file" name="files[]" multiple style="display: none;">
+                        <p>📄 Drop files here or click to browse</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Documentation Types</h3>
+            </div>
+            
+            <form id="generate-docs-form" action="{{ url_for('generate_docs') }}" method="POST">
+                <div class="checkbox-group">
+                    <div class="checkbox-item selected">
+                        <input type="checkbox" name="doc_types" value="architecture_overview" checked>
+                        <div>
+                            <strong>🏗️ Architecture Overview</strong>
+                            <p>System architecture and components</p>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-item selected">
+                        <input type="checkbox" name="doc_types" value="developer_guide" checked>
+                        <div>
+                            <strong>👨‍💻 Developer Guide</strong>
+                            <p>Setup and development guidelines</p>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="doc_types" value="api_documentation">
+                        <div>
+                            <strong>🔌 API Documentation</strong>
+                            <p>Endpoints and usage examples</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" id="generate-docs-button" class="btn btn-success btn-block mt-3" disabled>
+                    Upload Codebase First
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Results</h2>
+            </div>
+            
+            <div id="repo-info-container"></div>
+            <div id="project-summary-container"></div>
+            
+            <div id="documentation-container">
+                <div class="text-center" style="padding: 60px 24px;">
+                    <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;">🤖</div>
+                    <h3>Ready to Generate Documentation</h3>
+                    <p class="text-muted">Upload your codebase to get started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const radioButtons = document.querySelectorAll('input[name="upload_method"]');
+    const uploadForms = document.querySelectorAll('.upload-form');
+    
+    function showUploadForm(method) {
+        uploadForms.forEach(form => form.classList.add('hidden'));
+        const targetForm = document.getElementById(`${method}-upload`);
+        if (targetForm) {
+            targetForm.classList.remove('hidden');
+        }
+    }
+    
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.checked) {
+                showUploadForm(radio.value);
+            }
+        });
+    });
+    
+    document.querySelectorAll('.file-upload').forEach(area => {
+        area.addEventListener('click', () => {
+            const input = area.querySelector('input[type="file"]');
+            if (input) input.click();
+        });
+    });
+});
+</script>
+{% endblock %}

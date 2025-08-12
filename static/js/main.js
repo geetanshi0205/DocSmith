@@ -1,5 +1,3 @@
-// Main JavaScript for Code-to-Doc Translator
-
 // Utility functions
 function showLoading(text = 'Processing...') {
     const overlay = document.getElementById('loading-overlay');
@@ -100,11 +98,24 @@ function initializeFileUpload() {
             const fileInput = area.querySelector('input[type="file"]');
             if (fileInput && files.length > 0) {
                 fileInput.files = files;
+                // Show file selection immediately
+                displayFileSelection(files, fileInput);
                 // Trigger change event
                 const event = new Event('change', { bubbles: true });
                 fileInput.dispatchEvent(event);
             }
         });
+        
+        // Add file input change listener for immediate display (without duplicating)
+        const fileInput = area.querySelector('input[type="file"]');
+        if (fileInput && !fileInput.hasAttribute('data-listener-added')) {
+            fileInput.setAttribute('data-listener-added', 'true');
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    displayFileSelection(e.target.files, e.target);
+                }
+            });
+        }
     });
 }
 
@@ -179,17 +190,21 @@ function handleZipUpload() {
     if (!form) return;
     
     const fileInput = form.querySelector('input[type="file"]');
-    if (fileInput) {
+    if (fileInput && !fileInput.hasAttribute('data-submit-listener')) {
+        fileInput.setAttribute('data-submit-listener', 'true');
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                submitFormAjax(form, {
-                    onSuccess: (data) => {
-                        hideLoading();
-                        showAlert(data.message, 'success');
-                        displayUploadSuccess(data);
-                        enableDocumentationGeneration();
-                    }
-                });
+                // Auto-submit after file selection
+                setTimeout(() => {
+                    submitFormAjax(form, {
+                        onSuccess: (data) => {
+                            hideLoading();
+                            showAlert(data.message, 'success');
+                            displayUploadSuccess(data);
+                            enableDocumentationGeneration();
+                        }
+                    });
+                }, 500); // Small delay to show file selection first
             }
         });
     }
@@ -201,17 +216,21 @@ function handleFilesUpload() {
     if (!form) return;
     
     const fileInput = form.querySelector('input[type="file"]');
-    if (fileInput) {
+    if (fileInput && !fileInput.hasAttribute('data-submit-listener')) {
+        fileInput.setAttribute('data-submit-listener', 'true');
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                submitFormAjax(form, {
-                    onSuccess: (data) => {
-                        hideLoading();
-                        showAlert(data.message, 'success');
-                        displayUploadSuccess(data);
-                        enableDocumentationGeneration();
-                    }
-                });
+                // Auto-submit after file selection
+                setTimeout(() => {
+                    submitFormAjax(form, {
+                        onSuccess: (data) => {
+                            hideLoading();
+                            showAlert(data.message, 'success');
+                            displayUploadSuccess(data);
+                            enableDocumentationGeneration();
+                        }
+                    });
+                }, 500); // Small delay to show file selection first
             }
         });
     }
@@ -454,6 +473,76 @@ function displayCodeExplanation(explanation) {
     `;
 }
 
+function displayFileSelection(files, fileInput) {
+    const container = document.getElementById('repo-info-container');
+    if (!container) return;
+    
+    const isZip = fileInput.accept === '.zip';
+    const isMultiple = fileInput.hasAttribute('multiple');
+    
+    let fileInfo = '';
+    
+    if (isZip && files.length > 0) {
+        const file = files[0];
+        fileInfo = `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📦 ZIP File Selected</h3>
+                </div>
+                <p><strong>File:</strong> ${file.name}</p>
+                <p><strong>Size:</strong> ${formatFileSize(file.size)}</p>
+                <p><strong>Status:</strong> Ready to upload</p>
+                <div class="mt-2">
+                    <small class="text-muted">File will be uploaded automatically...</small>
+                </div>
+            </div>
+        `;
+    } else if (isMultiple && files.length > 0) {
+        const fileList = Array.from(files).slice(0, 5).map(file => 
+            `<li>${file.name} (${formatFileSize(file.size)})</li>`
+        ).join('');
+        
+        const remainingCount = files.length > 5 ? files.length - 5 : 0;
+        
+        fileInfo = `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📄 Files Selected</h3>
+                </div>
+                <p><strong>Count:</strong> ${files.length} files</p>
+                <p><strong>Total Size:</strong> ${formatFileSize(Array.from(files).reduce((total, file) => total + file.size, 0))}</p>
+                <div class="mt-2">
+                    <strong>Files:</strong>
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        ${fileList}
+                        ${remainingCount > 0 ? `<li><em>... and ${remainingCount} more files</em></li>` : ''}
+                    </ul>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Files will be uploaded automatically...</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = fileInfo;
+    
+    // Enable generate button (it will be properly enabled after upload)
+    const generateButton = document.getElementById('generate-docs-button');
+    if (generateButton) {
+        generateButton.disabled = false;
+        generateButton.textContent = 'Uploading...';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 function displayUploadSuccess(data) {
     const container = document.getElementById('repo-info-container');
     if (!container) return;
@@ -581,6 +670,49 @@ function switchUploadForm(method) {
     const targetForm = document.getElementById(`${method}-upload`);
     if (targetForm) {
         targetForm.classList.remove('hidden');
+    }
+    
+    // Clear result UI when switching methods
+    clearResultUI();
+    
+    // Disable generate button when switching
+    disableDocumentationGeneration();
+}
+
+// Clear all result containers
+function clearResultUI() {
+    const containers = [
+        'repo-info-container',
+        'project-summary-container', 
+        'documentation-container'
+    ];
+    
+    containers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '';
+        }
+    });
+    
+    // Reset documentation container to initial state
+    const docContainer = document.getElementById('documentation-container');
+    if (docContainer) {
+        docContainer.innerHTML = `
+            <div class="text-center" style="padding: 60px 24px;">
+                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;">🤖</div>
+                <h3>Ready to Generate Documentation</h3>
+                <p class="text-muted">Upload your codebase to get started</p>
+            </div>
+        `;
+    }
+}
+
+// Disable generate documentation button
+function disableDocumentationGeneration() {
+    const generateButton = document.getElementById('generate-docs-button');
+    if (generateButton) {
+        generateButton.disabled = true;
+        generateButton.textContent = 'Upload Codebase First';
     }
 }
 
